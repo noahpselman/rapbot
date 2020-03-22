@@ -1,4 +1,4 @@
-import requests as re
+import re
 import urllib.parse
 import util
 from bs4 import BeautifulSoup
@@ -8,83 +8,6 @@ LIMITING_DOMAIN = "ohhla.com"
 # SESSION = requests.Session()
 # SESSION.trust_env = False
 
-
-def is_absolute_url(url):
-	'''
-	Is url an absolute URL?
-	'''
-	if url == "":
-		return False
-	return urllib.parse.urlparse(url).netloc != ""
-
-
-def get_request(url):
-
-	if is_absolute_url(url):
-
-		try:
-			r = re.get(url)
-			if r.status_code == 404 or r.status_code == 403:
-				r = None
-		
-		except Exception:
-			# fail on any kind of error
-			r = None
-
-		return r
-
-
-def read_request(request):
-
-	try:
-		return request.text.encode('iso-8859-1')
-
-	except Exception:
-		print("read failed: " + request.url)
-
-	return ""
-
-
-def convert_if_relative_url(current_url, new_url):
-    '''
-    Attempt to determine whether new_url is a relative URL and if so,
-    use current_url to determine the path and create a new absolute
-    URL.  Will add the protocol, if that is all that is missing.
-
-    Inputs:
-        current_url: absolute URL
-        new_url:
-
-    Outputs:
-        new absolute URL or None, if cannot determine that
-        new_url is a relative URL.
-
-    Examples:
-        convert_if_relative_url("http://cs.uchicago.edu", "pa/pa1.html") yields
-            'http://cs.uchicago.edu/pa/pa.html'
-
-        convert_if_relative_url("http://cs.uchicago.edu", "foo.edu/pa.html")
-            yields 'http://foo.edu/pa.html'
-    '''
-    if new_url == "" or not is_absolute_url(current_url):
-        return None
-
-    if is_absolute_url(new_url):
-        return new_url
-
-    parsed_url = urllib.parse.urlparse(new_url)
-    path_parts = parsed_url.path.split("/")
-
-    if not path_parts:
-        return None
-
-    ext = path_parts[0][-4:]
-    if ext in [".edu", ".org", ".com", ".net"]:
-        return "http://" + new_url
-    elif new_url[:3] == "www":
-        return "http://" + new_path
-    else:
-        return urllib.parse.urljoin(current_url, new_url)
 
 
 def open_page(url):
@@ -99,21 +22,34 @@ def open_page(url):
 
 	else:
 		return None, None
-	# 	return BeautifulSoup(read_request(get_request(url)))
-
-	# else:
-	# 	return BeautifulSoup(read_request(get_request(new_url)))
 
 
-		
+def is_artist_page(soup):
 
-	 #    try:
-		#     return BeautifulSoup(r.text.encode('iso-8859-1'))
-		
-		# except Exception:
-		#     print("read failed: " + r.url)
-		
-	 #    return ""
+	trs = soup.find_all('tr')
+	artist_page = any([re.search(r'all artists database', t.text, flags=re.I) for t in trs])
+	# print(artist_page)
+	return artist_page
+
+
+def get_artists(soup):
+
+	artists = []
+
+	### check if page has artist
+	if is_artist_page(soup):
+		### collect artist names
+		artist_tags = soup.find('pre').find_all('a')
+
+		for tag in artist_tags:
+			if tag.text.strip():
+				artists.append(tag.text)
+
+		# artists = map(lambda x: x.text, artist_tags)
+		# print(artists)
+	# print("hi")
+	return artists
+
 
 # def get_lyrics(current_page, soup, visited_pages=set()):
 def get_lyrics(url, visited_pages=set()):
@@ -171,19 +107,4 @@ def get_lyrics(url, visited_pages=set()):
 		return lyrics
 	# print(url)
 
-
-
-
-
-
-
-def visit_page(url, limiting_domain, visited_courses, map_dict, filename):
-
-	r = util.get_request(url)
-	current_url = util.get_request_url(r)
-	soup = soupify(util.read_request(r))
-
-
-def get_links(page):
-	return list_of_links
 
