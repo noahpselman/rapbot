@@ -1,4 +1,6 @@
 ## creates song class
+## used for parsing scraped text into artists, albums, and lyrics
+## challenge is finding standardized artist identification for each verse
 
 import re
 

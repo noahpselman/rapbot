@@ -3,11 +3,15 @@ import urllib.parse
 import util
 from bs4 import BeautifulSoup
 
-STARTING_URL = "http://ohhla.com/YFA_eminem.html"
+STARTING_URL = "http://ohhla.com/favorite.html"
 LIMITING_DOMAIN = "ohhla.com"
 # SESSION = requests.Session()
 # SESSION.trust_env = False
+BAD_TAGS = ['left', 'left-wrap', 'menu']
 
+def verify_no_menu(tag):
+
+	tag.descendents
 
 
 def open_page(url):
@@ -52,7 +56,7 @@ def get_artists(soup):
 
 
 # def get_lyrics(current_page, soup, visited_pages=set()):
-def get_lyrics(url, visited_pages=set()):
+def get_lyrics(url=STARTING_URL, visited_pages=set()):
 
 	print("\ntrying", url)
 	visited_pages.add(url)
@@ -71,21 +75,37 @@ def get_lyrics(url, visited_pages=set()):
 
 	## base case
 	if url[-4:] == '.txt':# or len(visited_pages) > 2:
-		print("adding {}\n".format(url))
-		return [url]
+		if soup.find('pre'):
+			text = soup.find('pre').text
+			print("adding {}\n".format(url))
+		else:
+			ps = soup.find_all('p')
+			ps = list(filter(lambda x: 'Artist:' in x.text, ps))
+			if len(ps)==1:
+				text = ps[0].text
+			else:
+				text = soup.text
+		return [(url, text)]
 
 	## recursive case
 	else:
 		# print("reached recursive case")
 		lyrics = []
-		new_links = soup.find_all('a')
+		if soup.find('div', id='leftmain'):
+			tag = soup.find('div', id='leftmain')
+		else:
+			tag = soup
+		new_links = tag.find_all('a', id=lambda x: x not in 'menu', href=True)
 
 		for link in new_links:
 
+			# if len(visited_pages) > 20:
+			# 	continue
+
 			### check if link can be followed
-			if 'href' not in link.attrs:
-				print("href not in attrs")
-				continue
+			# if 'href' not in link.attrs:
+			# 	print("href not in attrs")
+			# 	continue
 			
 			# print(link['href'])
 
