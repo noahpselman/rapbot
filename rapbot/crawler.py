@@ -9,6 +9,12 @@ LIMITING_DOMAIN = "ohhla.com"
 # SESSION.trust_env = False
 BAD_TAGS = ['left', 'left-wrap', 'menu']
 
+ADD_RAW_TEXT = (
+	"INSERT INTO raw_text "
+	"(url, text) "
+	"VALUES (%s, %s) "
+	)
+
 def verify_no_menu(tag):
 
 	tag.descendents
@@ -56,7 +62,7 @@ def get_artists(soup):
 
 
 # def get_lyrics(current_page, soup, visited_pages=set()):
-def get_lyrics(url=STARTING_URL, visited_pages=set()):
+def get_lyrics(cnx, cursor, url=STARTING_URL, visited_pages=set()):
 
 	print("\ntrying", url)
 	visited_pages.add(url)
@@ -66,12 +72,12 @@ def get_lyrics(url=STARTING_URL, visited_pages=set()):
 		url, soup = open_page(url)
 
 	except Exception:
-		print("there was an exception\n")
-		return []
+		print("there was an exception - you done fucked up\n")
+		return None
 
 	if not url:
 		print("no url")
-		return []
+		return None
 
 	## base case
 	if url[-4:] == '.txt':# or len(visited_pages) > 2:
@@ -85,7 +91,10 @@ def get_lyrics(url=STARTING_URL, visited_pages=set()):
 				text = ps[0].text
 			else:
 				text = soup.text
-		return [(url, text)]
+
+		cursor.execute(ADD_RAW_TEXT, (url, text))
+		cnx.commit()
+		# return [(url, text)]
 
 	## recursive case
 	else:
@@ -95,11 +104,11 @@ def get_lyrics(url=STARTING_URL, visited_pages=set()):
 			tag = soup.find('div', id='leftmain')
 		else:
 			tag = soup
-		new_links = tag.find_all('a', id=lambda x: x not in 'menu', href=True)
+		new_links = tag.find_all('a', href=True)
 
 		for link in new_links:
 
-			# if len(visited_pages) > 20:
+			# if len(visited_pages) > 30:
 			# 	continue
 
 			### check if link can be followed
@@ -122,9 +131,9 @@ def get_lyrics(url=STARTING_URL, visited_pages=set()):
 				print("child link shan't be followed: {}".format(abs_link))
 				continue
 
-			lyrics += get_lyrics(abs_link, visited_pages)
+			get_lyrics(cnx, cursor, abs_link, visited_pages)
 
-		return lyrics
+		# return None
 	# print(url)
 
 

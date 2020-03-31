@@ -13,14 +13,60 @@ TABLE = (
 	"	PRIMARY KEY (url));"
 	)
 
+CLEAN_TEXT_TABLE = (
+	"CREATE TABLE clean_text ("
+	"	url VARCHAR(200) NOT NULL, " 
+	" 	title VARCHAR(100) NOT NULL, "
+	"	artist VARCHAR(105) NOT NULL, "
+	"	album VARCHAR(100) NOT NULL, "
+	"	lyrics MEDIUMTEXT NOT NULL) "
+	# "	INDEX par_ind (customer_id) "
+	# "	CONSTRAINT fk_raw_text FOREIGN KEY (raw_text_url)"
+	# "	REFERENCES raw_text(url))"
+	)
 
+
+def does_table_exist(cnx, table_name):
+
+    c = cnx.cursor()
+    c.execute("""
+        SELECT COUNT(*)
+        FROM information_schema.tables
+        WHERE table_name = %s
+        """, (table_name,))
+
+    rv = c.fetchone()[0] == 1
+    c.close()
+    
+    return rv
+
+
+def create_clean_text_table(cnx):
+
+	c = cnx.cursor()
+	
+
+	# return "did it"
+	# break
+	try:
+		print('creating table...')
+		c.execute(CLEAN_TEXT_TABLE)
+
+	except:
+		print('fuck it failed')
+		c.close()
+		return 0
+
+	c.close()
+	return 1
 
 
 def add_row(cursor, url, text):
 	cursor.execute(ADD_RAW_TEXT, (url, text))
 
 
-def go():
+
+def setup_db_and_raw_text():
 
 	### ESTABLISH CONNECTS
 	cnx = mysql.connector.connect(
@@ -54,35 +100,25 @@ def go():
 	### 
 
 
-def insert_into_databse():
-	pass
+def get_cnx():
 
-
-def get_cnx(host, user, passwd, database=None):
-
-	if database:
-		cnx = mysql.connector.connect(
-			host=host,
-			user=user,
-			passwd=passwd,
-			database=database)
-
-	else:
-		cnx = mysql.connector.connect(
-			host=host,
-			user=user,
-			passwd=passwd)
+	cnx = mysql.connector.connect(
+		host=HOST,
+		user=USER,
+		passwd=PASSWD,
+		database=DB_NAME)
 
 	return cnx
-	# # print('hi')
-	# args = {'host': host, 'user': user, 'passwd': passwd, 'database': database}
-	# params = ', '.join(["{}='{}'".format(k, v) for k, v in args.items() if v])
-	# # print(params)
-	# # return params
-	# print(params)
-	# cnx = mysql.connector.connect(eval(params))
 
-	# return cnx
+
+def pull_table(cnx, cols, table_name):
+
+	c = cnx.cursor()
+	col_text = ", ".join(cols)
+	statement = "SELECT {} FROM {}".format(col_text, table_name)
+	print(statement)
+	c.execute(statement)
+	return c.fetchall()
 
 
 def create_db(cursor, db_name):
@@ -96,26 +132,3 @@ def create_db(cursor, db_name):
         # exit(1)
 
 
-
-	# if db_name not in cursor.execute("SHOW DATABASES"):
-	
-	# 	cursor.execute("CREATE DATABASE %s", db_name)
-	# 	print("{} successfully created".format(db_name))
-
-	# else:
-	# 	print("{} already exists".format(db_name))
-
-
-
-# mycursor.execute("CREATE DATABASE testdb")
-# mycursor.execute("SHOW DATABASES")
-
-# for db in mycursor:
-# 	print(db)
-
-# mycursor.execute("CREATE TABLE songs (name VARCHAR(100), year INTEGER(4))")
-
-# mycursor.execute("SHOW TABLES")
-
-# for t in mycursor:
-# 	print(t)

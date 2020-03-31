@@ -12,32 +12,47 @@ class Song():
 		'''
 		self.raw_page = text
 
-		self.find_song()
-		self.find_artist()
-		self.find_album()
-		self.find_lyrics()
+		self.find_song(text)
+		self.find_artist(text)
+		self.find_album(text)
+		self.find_lyrics(text)
 		# self.artist = None
 		# self.album = None
 
-	def find_song(self):
-		line = re.findall(r"Song:.*", self.raw_page, flags=re.I)[0]
-		self.title = ' '.join(line.split()[1:])
+	def find_song(self, text):
+		lines = re.findall(r"Song:.*", text, flags=re.I)
+		if lines:
+			self.title = ' '.join(lines[0].split()[1:])
+		else:
+			self.title = ""
 
 
-	def find_artist(self):
-		line = re.findall(r"Artist:.*", self.raw_page, flags=re.I)[0]
-		self.artist = ' '.join(line.split()[1:])
+	def find_artist(self, text):
+		lines = re.findall(r"Artist:.*", text, flags=re.I)
+		if lines:			
+			self.artist = ' '.join(lines[0].split()[1:])
+		else:
+			self.artist = ""
 		
 
-	def find_album(self):
-		line = re.findall(r"Album:.*", self.raw_page, flags=re.I)[0]
-		if line:
-			self.album = ' '.join(line.split()[1:])
+	def find_album(self, text):
+		lines = re.findall(r"Album:.*", text, flags=re.I)
+		if lines:
+			self.album = ' '.join(lines[0].split()[1:])
 		else:
-			self.album = None
+			self.album = ""
 
-	def find_lyrics(self):
-		self.lyrics = '\n\n'.join(self.raw_page.split("\n\n")[1:])
+	def find_lyrics(self, text):
+
+		lyrics = re.sub(r"[\(\[].*?[\)\]]", "", text)  ### remove brackets and parens
+		lyrics = re.sub(r"[^\w\s:]", "", lyrics)
+		lyrics = re.findall(r"^[^:\n]*?$", lyrics, flags=re.MULTILINE)
+		lyrics = filter(lambda x: x.strip(), lyrics)
+		lyrics = '\n'.join(list(lyrics))
+		self.lyrics = lyrics.lower()
+			# ^()\[\]:].*", text, flags=re.MULTILINE)
+		# return re.sub(r"[^()\[\]:].*", text, flags=re.MULTILINE))
+
 
 	def __repr__(self):
 
